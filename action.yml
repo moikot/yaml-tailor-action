@@ -1,0 +1,46 @@
+name: "YAML Tailor Action"
+description: "Customize YAML to your needs"
+author: "moikot"
+branding:
+  color: purple
+  icon: sliders
+inputs:
+  tailor_image:
+    description: "The Docker image containing yaml-tailor (default: 'moikot/yaml-tailor:1.0')"
+    default: "moikot/yaml-tailor:1.0"
+    required: false
+
+  values:
+    description: "The YAML Tailor values, e.g. foo=bar"
+    required: false
+  
+  strings:
+    description: "The YAML Tailor strings, e.g. baz=1"
+    required: false    
+
+  yaml_file:
+    description: "The relative path under $GITHUB_WORKSPACE to a YAML file"
+    equired: true
+  
+runs:
+  using: composite
+  steps:
+    - run: |        
+        args=()
+
+        while read value; do 
+          if [ -n "${value}" ]; then 
+            args+=(-v "${value}") 
+          fi
+        done <<< "${{ inputs.values }}"
+
+        while read string; do 
+          if [ -n "${string}" ]; then 
+            args+=(-s "${string}") 
+          fi
+        done <<< "${{ inputs.strings }}"
+
+        echo "${args[@]}"
+        docker run -i --rm -v "${GITHUB_WORKSPACE}":/workspace ${{ inputs.tailor_image }} "${args[@]}" /workspace/${{ inputs.yaml_file }}
+      shell: bash
+
